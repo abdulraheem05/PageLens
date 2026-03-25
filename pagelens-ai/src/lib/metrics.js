@@ -2,27 +2,26 @@ export function extractMetrics($, url) {
   const urlObj = new URL(url);
   const domain = urlObj.hostname.replace('www.', '');
 
-  // 1. Accuracy Fix: Remove non-visible noise before counting words 
+  // 1. Accuracy Fix: Remove non-visible noise
   const clone = $.load($.html());
   clone('script, style, noscript, iframe, svg, path, footer, nav').remove();
   
   const text = clone('body')
     .text()
-    .replace(/\s+/g, ' ') // Collapse multiple spaces/newlines
+    .replace(/\s+/g, ' ')
     .trim();
 
   const wordCount = text.length > 0 ? text.split(/\s+/).length : 0;
 
-  // 2. Heading Logic: H1-H3 counts [cite: 19]
+  // 2. Heading Logic
   let h1 = $('h1').length;
-  // Fallback to common classes only if actual H1 tags are missing
   if (h1 === 0) {
     h1 = $('[class*="heading-1"], [class*="title-1"], .h1').length;
   }
   const h2 = $('h2').length;
   const h3 = $('h3').length;
 
-  // 3. CTA & Links: Distinguishing Internal vs External 
+  // 3. CTA & Links
   const ctaCount = $('button, a.button, a.btn, [role="button"], .cta').length;
   
   let internal = 0;
@@ -32,7 +31,6 @@ export function extractMetrics($, url) {
     const href = $(el).attr('href');
     if (!href || href.startsWith('#') || href.startsWith('javascript:')) return;
 
-    // A link is internal if it's relative ('/page') or matches the domain
     const isRelative = href.startsWith('/') && !href.startsWith('//');
     const isSameDomain = href.includes(domain);
 
@@ -43,13 +41,12 @@ export function extractMetrics($, url) {
     }
   });
 
-  // 4. Image Analysis: % Missing Alt Text [cite: 21, 22]
+  // 4. Image Analysis
   const images = $('img').length;
   let missingAlt = 0;
 
   $('img').each((i, el) => {
     const alt = $(el).attr('alt');
-    // An image fails if the alt attribute is missing OR explicitly empty ""
     if (alt === undefined || alt === null || alt.trim() === "") {
       missingAlt++;
     }

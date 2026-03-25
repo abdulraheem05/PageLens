@@ -6,18 +6,20 @@ import { buildPrompt } from '@/utils/promptBuilder';
 export async function POST(req) {
   try {
     const { url } = await req.json();
-    const { html, $ } = await scrapeWebsite(url);
+    
+    // Using the new lightweight scraper
+    const { $, html } = await scrapeWebsite(url);
     const metrics = extractMetrics($, url);
 
-    // Fallback content logic
+    // Get content for AI
     const content = $('main').text() || $('article').text() || $('body').text();
 
-    const prompt = buildPrompt(metrics, content);
+    const prompt = buildPrompt(metrics, content.substring(0, 5000));
     const aiResponse = await analyzeWithAI(prompt);
 
-    return Response.json({ metrics, aiResponse, promptLog: prompt });
+    return Response.json({ metrics, aiResponse, promptLog: prompt, url });
   } catch (error) {
-    console.error("Scraper Error:", error); // CRITICAL: This shows you the real bug
+    console.error("API Audit Error:", error);
     return Response.json({ 
       error: "Audit failed", 
       details: error.message 
