@@ -1,20 +1,29 @@
-import puppeteer from 'puppeteer';
+import puppeteer from 'puppeteer-core';
+import chromium from '@sparticuz/chromium';
 import * as cheerio from 'cheerio';
 
 export async function scrapeWebsite(url) {
-  const browser = await puppeteer.launch({
-    headless: true, // or 'new' for newer versions
-    args: ['--no-sandbox', '--disable-setuid-sandbox']
-  });
+  let browser;
 
   try {
-    const page = await browser.newPage();
-    await page.setUserAgent('Mozilla/5.0 ...');
+    const isLocal = process.env.NODE_ENV === 'development';
 
-    // 'networkidle2' is safer for JS-heavy sites
+    browser = await puppeteer.launch({
+      args: isLocal ? [] : chromium.args,
+      defaultViewport: chromium.defaultViewport,
+      executablePath: isLocal 
+        ? "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe" // Local Chrome path
+        : await chromium.executablePath(),
+      headless: chromium.headless,
+    });
+
+    const page = await browser.newPage();
+    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36');
+
+    // --- YOUR LOGIC STARTS HERE ---
     await page.goto(url, { waitUntil: 'networkidle2', timeout: 60000 });
 
-    // Manual scroll to trigger lazy-loaded content
+    // Manual scroll logic (Untouched)
     await page.evaluate(async () => {
       await new Promise((resolve) => {
         let totalHeight = 0;
@@ -31,16 +40,17 @@ export async function scrapeWebsite(url) {
       });
     });
 
-    // Instead of waitForTimeout, use a standard promise delay
     await new Promise(resolve => setTimeout(resolve, 2000));
 
     const html = await page.content();
-    await browser.close();
+    // --- YOUR LOGIC ENDS HERE ---
 
+    await browser.close();
     const $ = cheerio.load(html);
     return { html, $, url };
+
   } catch (error) {
-    await browser.close();
-    throw error; // Re-throw so the route catches it
+    if (browser) await browser.close();
+    throw error;
   }
 }
