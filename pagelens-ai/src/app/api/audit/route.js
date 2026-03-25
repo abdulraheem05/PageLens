@@ -1,14 +1,7 @@
-import { scrapeWebsite }
-from '@/lib/scraper';
-
-import { extractMetrics }
-from '@/lib/metrics';
-
-import { analyzeWithAI }
-from '@/lib/gemini';
-
-import { buildPrompt }
-from '@/utils/promptBuilder';
+import { scrapeWebsite } from '@/lib/scraper';
+import { extractMetrics } from '@/lib/metrics';
+import { analyzeWithAI } from '@/lib/gemini';
+import { buildPrompt } from '@/utils/promptBuilder';
 
 export async function POST(req) {
   try {

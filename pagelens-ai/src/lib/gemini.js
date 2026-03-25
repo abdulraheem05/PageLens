@@ -1,28 +1,22 @@
-import {
-GoogleGenerativeAI
-}
-from "@google/generative-ai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
-export async function analyzeWithAI(prompt){
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-const genAI =
-new GoogleGenerativeAI(
-process.env.GEMINI_API_KEY
-);
+export async function analyzeWithAI(prompt) {
+  const model = genAI.getGenerativeModel({ 
+    model: "gemini-2.5-flash",
+    generationConfig: { responseMimeType: "application/json" }
+  });
 
-const model =
-genAI.getGenerativeModel({
-
-model:"gemini-2.5-flash"
-
-});
-
-const result =
-await model.generateContent(prompt);
-
-const text =
-result.response.text();
-
-return text;
-
+  try {
+    const result = await model.generateContent(prompt);
+    const responseText = result.response.text();
+    
+    // Clean string from any potential markdown backticks
+    const cleanJson = responseText.replace(/```json|```/g, "").trim();
+    return JSON.parse(cleanJson);
+  } catch (error) {
+    console.error("AI Analysis Failed:", error);
+    throw new Error("AI failed to generate insights");
+  }
 }
