@@ -2,8 +2,8 @@ import puppeteer from 'puppeteer-core';
 import chromium from '@sparticuz/chromium';
 import * as cheerio from 'cheerio';
 
-// This is the remote location for the version 143 binary
-const CHROMIUM_PATH = "https://github.com/sparticuz/chromium/releases/download/v143.0.0/chromium-v143.0.0-pack.tar";
+// CONFIRMED WORKING URL for v131
+const CHROMIUM_PATH = "https://github.com/Sparticuz/chromium/releases/download/v131.0.1/chromium-v131.0.1-pack.tar";
 
 export async function scrapeWebsite(url) {
   let browser;
@@ -16,7 +16,7 @@ export async function scrapeWebsite(url) {
       defaultViewport: chromium.defaultViewport,
       executablePath: isLocal 
         ? "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe" 
-        : await chromium.executablePath(CHROMIUM_PATH), // <-- Pass the remote path here
+        : await chromium.executablePath(CHROMIUM_PATH),
       headless: isLocal ? true : chromium.headless,
       ignoreHTTPSErrors: true,
     });
@@ -24,27 +24,27 @@ export async function scrapeWebsite(url) {
     const page = await browser.newPage();
     await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36');
 
-    // Your existing scraping logic
-    await page.goto(url, { waitUntil: 'networkidle2', timeout: 60000 });
+    // Set a shorter timeout for the initial load to save time
+    await page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 });
 
+    // FAST SCROLL: We jump 800px at a time to finish in ~1-2 seconds
     await page.evaluate(async () => {
       await new Promise((resolve) => {
         let totalHeight = 0;
-        const distance = 400; // Increased distance for speed on Vercel
+        const distance = 800; 
         const timer = setInterval(() => {
-          const scrollHeight = document.body.scrollHeight;
           window.scrollBy(0, distance);
           totalHeight += distance;
-          if (totalHeight >= scrollHeight || totalHeight > 5000) {
+          if (totalHeight >= document.body.scrollHeight || totalHeight > 4000) {
             clearInterval(timer);
             resolve();
           }
-        }, 100);
+        }, 150);
       });
     });
 
-    // Reduced safety timeout to help stay under the 10s Hobby limit
-    await new Promise(resolve => setTimeout(resolve, 500)); 
+    // Small buffer for hydration
+    await new Promise(resolve => setTimeout(resolve, 500));
 
     const html = await page.content();
     await browser.close();
