@@ -4,12 +4,24 @@ const domain =
 new URL(url).hostname;
 
 const text =
-$('body').text();
+$('body')
+.text().
+replace(/\s+/g,' ').
+trim();
 
 const wordCount =
-text.split(/\s+/).length;
+text.length > 0 ?
+text.split(' ').length : 0;
 
-const h1 = $('h1').length;
+let h1 = $('h1').length;
+
+if(h1 === 0){
+
+h1 =
+$('[class*="heading"],[class*="title"]')
+.length;
+
+}
 const h2 = $('h2').length;
 const h3 = $('h3').length;
 
