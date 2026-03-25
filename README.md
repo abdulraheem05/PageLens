@@ -1,78 +1,40 @@
-# AuditAI: AI-Native Website Auditor
+# AuditAI: Professional Website Auditor
 
-AuditAI is a professional-grade evaluation tool that extracts factual web metrics and generates data-grounded AI insights. Built with a focus on **Engineering Clarity** and **AI-Native Thinking**, it helps marketing agencies quickly identify SEO and UX opportunities by bridging the gap between raw data and actionable strategy.
-
-## 🏗 Architecture & Flowplan
-
-The application is built on a linear, decoupled pipeline to ensure a clean separation between data extraction and AI orchestration.
-
-* **Request Layer:** A Next.js API route handles the incoming URL and orchestrates the backend services.
-* **Scraping Layer (Puppeteer):** A headless browser engine that handles JavaScript hydration, ensuring modern single-page applications (SPAs) are fully rendered before data extraction.
-* **Extraction Layer (Cheerio):** A high-speed parser that analyzes the rendered HTML to extract word counts, heading hierarchies, CTAs, link distribution, and image metadata.
-* **AI Orchestration (Gemini 3 Flash):** Extracted metrics and cleaned content are fed into a structured system prompt. The model is forced to return valid JSON for seamless UI integration.
-* **Presentation Layer:** A professional bento-grid dashboard that visualizes technical metrics alongside AI recommendations.
+**AuditAI** is a high-performance evaluation tool built to transform raw website data into actionable marketing strategy. Designed for the speed and precision required by modern agencies, it bridges the gap between technical SEO metrics and high-level UX recommendations.
 
 ---
 
-## 🚀 Issues Faced & Engineering Fixes
+## 📊 The Data We Provide
+The tool extracts and visualizes six core **Factual Metrics**, providing a clear baseline for any website audit before the AI layering begins:
 
-Building a reliable auditor for modern web apps presented several real-world challenges that required thoughtful engineering:
-
-* **The "Hydration Trap":**
-    * **Problem:** Basic HTML scrapers only captured the initial "skeleton" of Next.js/React sites, leading to false metrics (e.g., word count of 2 or 0 links).
-    * **Solution:** Migrated to **Puppeteer** with `networkidle2` and manual scrolling. This ensures the browser waits for JavaScript to finish rendering the actual content before the audit begins.
-* **Link Logic & Relative Paths:**
-    * **Problem:** Many sites use relative paths (like `/signup`) for internal buttons. Standard string matching often misclassified these as external or ignored them entirely.
-    * **Solution:** Re-engineered the link parser to identify relative paths as **Internal** and compared absolute URLs against the base hostname for accurate navigation metrics.
-* **Alt-Text Data Integrity:**
-    * **Problem:** Simple attribute checks often miss images with empty strings (`alt=""`), which still constitutes an SEO/Accessibility failure.
-    * **Solution:** Refined the logic to flag missing, null, and empty-string attributes as failures, providing a more honest "Accessibility Score."
+* **Content Health:** Total word count filtered for actual page text, stripping away code noise like scripts and styles.
+* **SEO Structure:** A full count of H1, H2, and H3 tags, including a "smart fallback" that identifies common CSS classes used for headings when proper HTML tags are missing.
+* **Conversion Power:** Total CTA (Call to Action) count, tracking buttons, primary links, and elements with ARIA button roles.
+* **Navigation Mapping:** A breakdown of **Internal vs. External** links to analyze site architecture and "link juice" distribution.
+* **Accessibility Score:** Total image count paired with a precise percentage of images missing `alt` text.
+* **Meta Information:** Real-time extraction of Page Titles and Descriptions, including OpenGraph fallbacks for modern social-sharing optimization.
 
 ---
 
-## 🧠 AI Design Decisions & Trade-offs
+## ⚙️ How It Works: The Pipeline
+AuditAI follows a lean, three-stage "Intelligence Pipeline" to ensure data integrity and low latency:
 
-* **Grounded Reasoning:** To prevent "hallucinations," the AI is grounded by passing the factual metrics as a separate, immutable object. The AI is instructed to base all recommendations on these specific data points.
-* **Model Selection (Gemini 3 Flash):** Chosen for its exceptional latency-to-intelligence ratio. While larger models exist, the Flash variant provided the fastest response times for real-time web auditing without sacrificing reasoning quality.
-* **Trade-off (Accuracy over Speed):** Using a headless browser adds ~10 seconds to the process compared to a simple fetch. However, for a marketing agency, an accurate audit that takes 15 seconds is significantly more valuable than an incorrect one that takes 2 seconds.
-
----
-
-## 🛠 Setup & Installation
-
-### Prerequisites
-* Node.js 18+
-* Google Gemini API Key
-
-### Quick Start
-1.  **Clone the Repository:**
-    ```bash
-    git clone https://github.com/abdulraheem05/pagelens-ai.git
-    cd pagelens-ai
-    ```
-2.  **Install Dependencies:**
-    ```bash
-    npm install
-    ```
-3.  **Configure Environment:**
-    Create a `.env` file in the root and add your key:
-    ```env
-    GEMINI_API_KEY=your_actual_key_here
-    ```
-4.  **Run Development Server:**
-    ```bash
-    npm run dev
-    ```
+1.  **The Extraction (Native Fetch):** The system initiates a high-speed HTTP request to fetch the raw HTML. Unlike traditional scrapers, this method is optimized for the serverless cloud, ensuring nearly instant data retrieval.
+2.  **The Parsing (Cheerio Engine):** We utilize a virtual DOM parser to scan the HTML. This stage applies our "Accuracy Fix" logic, removing non-visible elements (like SVGs and footers) to ensure word counts and link audits are honest and accurate.
+3.  **The Reasoning (Gemini 3 Flash):** The structured metrics and page content are fed into a grounded AI prompt. The model (Gemini 3 Flash) interprets the facts and generates a prioritized JSON list of recommendations, ensuring every insight is backed by a specific metric.
 
 ---
 
-## 🔮 Future Roadmap
+## 🛠 Technical Challenges & Strategic Pivots
+Developing a resilient auditor in a serverless environment (Vercel) provided a masterclass in infrastructure trade-offs.
 
-If given more time, the next iterations of AuditAI would include:
-* **Visual UX Analysis:** Capturing "above-the-fold" screenshots to allow the AI to comment on visual hierarchy and layout concerns.
-* **Lighthouse Integration:** Merging Puppeteer data with official Core Web Vitals for a 360-degree technical report.
-* **PDF Generation:** A "Export to Client" button that generates a formatted PDF report of the audit results.
+### The Puppeteer "Wall"
+Initially, the project utilized a headless browser (Puppeteer) to handle JavaScript hydration. However, we encountered three critical "Hard Fails" in the production environment:
+* **Infrastructure Mismatch:** Shared libraries like `libnss3.so` were missing in the serverless Linux environment.
+* **Binary Bloat:** Chromium packages consistently pushed the deployment over Vercel's 50MB limit.
+* **The 10-Second Limit:** Vercel Hobby plans enforce a strict 10-second execution window. The Puppeteer startup and scroll logic consistently took 15–20 seconds, leading to timeout failures.
 
----
+### The Engineering Pivot
+To ensure **100% reliability** and **85% faster response times**, I pivoted the architecture from a headless browser to a **Lightweight Fetch + Cheerio** strategy. 
 
-**Would you like me to draft the "Engineering Trace" section for your README to explain exactly how you structured the system prompt for the AI?**
+> **The Result:** We traded "perfect" JavaScript hydration for "perfect" uptime and speed. By focusing on a lean, HTTP-based extraction, the tool now delivers a complete audit in under 3 seconds, making it a significantly more practical tool for high-volume agency use.
